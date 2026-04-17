@@ -164,6 +164,24 @@ def rerun_app() -> None:
         st.rerun()
 
 
+def get_landing_plan_target() -> str | None:
+    get_qparams = getattr(st, "experimental_get_query_params", None)
+    if not get_qparams:
+        return None
+
+    params = get_qparams()
+    plan = params.get("plan", [None])[0]
+    if not plan:
+        return None
+
+    plan_value = str(plan).strip().lower()
+    if plan_value in {"pro", "premium"}:
+        return "pro"
+    if plan_value in {"starter", "free"}:
+        return "starter"
+    return None
+
+
 def navigate_to_page(page: str) -> None:
     st.session_state.page_target = page
 
@@ -398,8 +416,13 @@ def initialize() -> None:
     st.session_state.setdefault("_refresh_nonce", "0")
     st.session_state.setdefault("nav_page", "Dashboard")
     st.session_state.setdefault("page_target", None)
+    st.session_state.setdefault("landing_plan", None)
     st.session_state.setdefault("alert_auto_send", False)
     st.session_state.setdefault("smtp_provider", os.getenv("SMTP_PROVIDER", "Personalizado"))
+
+    plan_target = get_landing_plan_target()
+    if plan_target:
+        st.session_state.landing_plan = plan_target
     st.session_state.setdefault("alert_recipient_email", os.getenv("SMTP_RECIPIENT", ""))
     st.session_state.setdefault("smtp_server", os.getenv("SMTP_SERVER", ""))
     st.session_state.setdefault("smtp_port", int(os.getenv("SMTP_PORT", "587")) if os.getenv("SMTP_PORT") else 587)
@@ -753,6 +776,12 @@ def render_mix_donut_figure(revenue_actual: float, expense_actual: float) -> obj
 def show_login() -> None:
     render_app_header(APP_TITLE, APP_SUBTITLE)
     st.markdown("---")
+    landing_plan = st.session_state.get("landing_plan")
+    if landing_plan == "pro":
+        st.info("Você está acessando via link Premium. Use o cadastro para iniciar o trial do Pro e testar os recursos avançados.")
+    elif landing_plan == "starter":
+        st.info("Você está acessando via link Starter. Use o Starter gratuito para começar a usar o app sem custo.")
+
     st.subheader("Entre ou crie sua conta")
 
     tab_login, tab_register, tab_invite = st.tabs(["Login", "Cadastro", "Entrar com convite"])
