@@ -1,0 +1,33 @@
+Data,Categoria,Orçado,Realizado,Tipo
+2025-08-05,Receita recorrente,0,11000,Receita
+2025-08-12,Marketing digital,9500,9800,Despesa
+2025-08-18,Salários e benefícios,18000,17800,Despesa
+2025-08-24,Licenças de software,3200,3100,Despesa
+2025-09-01,Receita de vendas,0,12500,Receita
+2025-09-07,Aquisição de clientes,7200,7600,Despesa
+2025-09-14,Infraestrutura e nuvem,5400,5200,Despesa
+2025-09-21,Suporte técnico,2800,3000,Despesa
+2025-10-02,Receita de serviços,0,6800,Receita
+2025-10-09,Despesas administrativas,4100,4300,Despesa
+2025-10-16,Frete e logística,2300,2200,Despesa
+2025-10-25,Desenvolvimento de produto,10400,9800,Despesa
+2025-11-03,Receita recorrente,0,9500,Receita
+2025-11-10,Marketing digital,8700,9100,Despesa
+2025-11-17,Salários e benefícios,18500,18900,Despesa
+2025-11-24,Consultoria externa,5400,5200,Despesa
+2025-12-02,Receita de vendas,0,14200,Receita
+2025-12-11,Eventos e feiras,6200,7000,Despesa
+2025-12-18,Infraestrutura e nuvem,5600,5900,Despesa
+2025-12-23,Licenças de software,3100,3000,Despesa
+2026-01-05,Receita recorrente,0,11800,Receita
+2026-01-13,Aquisição de clientes,7600,8300,Despesa
+2026-01-20,Salários e benefícios,19200,19100,Despesa
+2026-01-27,Despesas operacionais,11200,11500,Despesa
+2026-02-04,Receita de serviços,0,8900,Receita
+2026-02-11,Marketing digital,9800,9600,Despesa
+2026-02-18,Suporte técnico,2900,3000,Despesa
+2026-02-26,Desenvolvimento de produto,10800,11000,Despesa
+2026-03-03,Receita de vendas,0,15200,Receita
+2026-03-10,Consultoria externa,5200,5000,Despesa
+2026-03-18,Frete e logística,2400,2550,Despesa
+2026-03-25,Despesas administrativas,4300,4500,Despesa
