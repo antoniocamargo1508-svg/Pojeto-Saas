@@ -186,6 +186,17 @@ def navigate_to_page(page: str) -> None:
     st.session_state.page_target = page
 
 
+def is_valid_mercadopago_config() -> bool:
+    if not MERCADO_PAGO_ACCESS_TOKEN:
+        return False
+
+    base_url = str(MERCADO_PAGO_BASE_URL or "").strip()
+    if not base_url or not base_url.startswith("https://"):
+        return False
+
+    return True
+
+
 def handle_checkout_return() -> None:
     get_qparams = getattr(st, "experimental_get_query_params", None)
     set_qparams = getattr(st, "experimental_set_query_params", None)
@@ -217,7 +228,7 @@ def handle_checkout_return() -> None:
 
 
 def get_mercadopago_checkout_url(tenant) -> str | None:
-    if not MERCADO_PAGO_ACCESS_TOKEN:
+    if not is_valid_mercadopago_config():
         return None
 
     tenant_id = getattr(tenant, "id", None) or getattr(tenant, "tenant_id", None) or "0"
@@ -275,24 +286,23 @@ def get_mercadopago_checkout_url(tenant) -> str | None:
 
 def render_upgrade_link(label: str, tenant=None) -> None:
     if MERCADO_PAGO_ACCESS_TOKEN and tenant is not None:
-        if MERCADO_PAGO_BASE_URL.startswith("http://localhost") or MERCADO_PAGO_BASE_URL.startswith("https://localhost"):
+        if not is_valid_mercadopago_config():
             st.warning(
-                "Você está usando credenciais do Mercado Pago com BASE_URL local. "
-                "Para ativar a integração corretamente, configure `BASE_URL` com sua URL pública do Netlify ou domínio real, "
-                "por exemplo: https://orcamentario-saas.netlify.app"
+                "Checkout Mercado Pago não está configurado corretamente. "
+                "Verifique BASE_URL e MERCADOPAGO_ACCESS_TOKEN ou use um upgrade externo."
             )
-
-        checkout_url = get_mercadopago_checkout_url(tenant)
-        if checkout_url:
-            safe_url = str(checkout_url).replace('"', '%22').replace("'", "%27")
-            st.markdown(
-                f'<a href="{safe_url}" target="_blank" rel="noopener noreferrer" '
-                f'style="display:inline-block;padding:12px 18px;background:#2563eb;color:#fff;'
-                f'border-radius:8px;text-decoration:none;font-size:1rem;">{label}</a>',
-                unsafe_allow_html=True,
-            )
-            st.caption("Mercado Pago aceitará cartão de crédito e Pix quando habilitados na conta.")
-            return
+        else:
+            checkout_url = get_mercadopago_checkout_url(tenant)
+            if checkout_url:
+                safe_url = str(checkout_url).replace('"', '%22').replace("'", "%27")
+                st.markdown(
+                    f'<a href="{safe_url}" target="_blank" rel="noopener noreferrer" '
+                    f'style="display:inline-block;padding:12px 18px;background:#2563eb;color:#fff;'
+                    f'border-radius:8px;text-decoration:none;font-size:1rem;">{label}</a>',
+                    unsafe_allow_html=True,
+                )
+                st.caption("Mercado Pago aceitará cartão de crédito e Pix quando habilitados na conta.")
+                return
 
     if UPGRADE_URL:
         safe_url = str(UPGRADE_URL).replace('"', '%22').replace("'", "%27")
@@ -403,7 +413,20 @@ def apply_global_style() -> None:
     )
 
 
+def reset_sqlite_database_if_requested() -> None:
+    if os.getenv("RESET_DATABASE", "").strip().lower() not in {"1", "true", "yes"}:
+        return
+
+    database_url = os.getenv("DATABASE_URL", "sqlite:///app.db")
+    if database_url.startswith("sqlite:///"):
+        db_path = Path(database_url.replace("sqlite:///", ""))
+        if db_path.exists():
+            db_path.unlink()
+            st.warning("Banco SQLite resetado. O app será iniciado com dados limpos na próxima execução.")
+
+
 def initialize() -> None:
+    reset_sqlite_database_if_requested()
     init_db()
     apply_global_style()
 
