@@ -4,3 +4,6 @@ __pycache__/
 app.db
 .env
 .DS_Store
+_smoke_test.db
+tmp_remote.html
+.ipynb_checkpoints/
