@@ -96,7 +96,18 @@ def _ensure_schema():
     # tenant_invites table is created by metadata; no ALTER needed here.
 
 
+def _reset_database_if_requested() -> None:
+    if os.getenv("RESET_DATABASE", "").strip() != "1":
+        return
+
+    if DATABASE_URL.startswith("sqlite:///"):
+        sqlite_path = DATABASE_URL.replace("sqlite:///", "", 1)
+        if os.path.exists(sqlite_path):
+            os.remove(sqlite_path)
+
+
 def init_db():
+    _reset_database_if_requested()
     import mvp.models
 
     Base.metadata.create_all(bind=engine)

@@ -7,6 +7,7 @@ import urllib.error
 import urllib.request
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import urlsplit, urlunsplit
 
 # Ensure the project root is on sys.path so `mvp.*` imports work when Streamlit runs from the file path.
 root_path = Path(__file__).resolve().parent.parent
@@ -186,12 +187,25 @@ def navigate_to_page(page: str) -> None:
     st.session_state.page_target = page
 
 
+def normalize_base_url(base_url: str) -> str | None:
+    if not base_url:
+        return None
+
+    parsed = urlsplit(str(base_url).strip())
+    if parsed.scheme.lower() != "https" or not parsed.netloc:
+        return None
+
+    path = parsed.path.rstrip("/")
+    normalized_path = path if path else ""
+    return urlunsplit((parsed.scheme.lower(), parsed.netloc, normalized_path, "", ""))
+
+
 def is_valid_mercadopago_config() -> bool:
     if not MERCADO_PAGO_ACCESS_TOKEN:
         return False
 
-    base_url = str(MERCADO_PAGO_BASE_URL or "").strip()
-    if not base_url or not base_url.startswith("https://"):
+    base_url = normalize_base_url(str(MERCADO_PAGO_BASE_URL or ""))
+    if not base_url:
         return False
 
     return True
@@ -228,7 +242,8 @@ def handle_checkout_return() -> None:
 
 
 def get_mercadopago_checkout_url(tenant) -> str | None:
-    if not is_valid_mercadopago_config():
+    base_url = normalize_base_url(str(MERCADO_PAGO_BASE_URL or ""))
+    if not base_url or not MERCADO_PAGO_ACCESS_TOKEN:
         return None
 
     tenant_id = getattr(tenant, "id", None) or getattr(tenant, "tenant_id", None) or "0"
@@ -245,9 +260,9 @@ def get_mercadopago_checkout_url(tenant) -> str | None:
         ],
         "external_reference": str(tenant_id),
         "back_urls": {
-            "success": f"{MERCADO_PAGO_BASE_URL}/?checkout_result=success",
-            "pending": f"{MERCADO_PAGO_BASE_URL}/?checkout_result=pending",
-            "failure": f"{MERCADO_PAGO_BASE_URL}/?checkout_result=failure",
+            "success": f"{base_url}/?checkout_result=success",
+            "pending": f"{base_url}/?checkout_result=pending",
+            "failure": f"{base_url}/?checkout_result=failure",
         },
         "auto_return": "approved",
         "payment_methods": {
