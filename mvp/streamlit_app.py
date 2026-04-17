@@ -2,10 +2,16 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import urllib.error
 import urllib.request
 from datetime import datetime
 from pathlib import Path
+
+# Ensure the project root is on sys.path so `mvp.*` imports work when Streamlit runs from the file path.
+root_path = Path(__file__).resolve().parent.parent
+if str(root_path) not in sys.path:
+    sys.path.insert(0, str(root_path))
 
 from dotenv import find_dotenv, load_dotenv
 import altair as alt
