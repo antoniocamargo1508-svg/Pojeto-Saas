@@ -1,8 +1,17 @@
 import os
+import sys
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker, declarative_base
 
+DEBUG_MODE = os.getenv("DEBUG_MODE", "").strip() == "1"
+
+if DEBUG_MODE:
+    print("[DATABASE] DEBUG MODE ENABLED", file=sys.stderr)
+
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///app.db")
+
+if DEBUG_MODE:
+    print(f"[DATABASE] Using: {DATABASE_URL}", file=sys.stderr)
 
 connect_args = {}
 if DATABASE_URL.startswith("sqlite"):
