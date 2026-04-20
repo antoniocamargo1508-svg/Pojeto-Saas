@@ -1,5 +1,7 @@
 import os
 import sys
+import tempfile
+from pathlib import Path
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker, declarative_base
 
@@ -8,7 +10,37 @@ DEBUG_MODE = os.getenv("DEBUG_MODE", "").strip() == "1"
 if DEBUG_MODE:
     print("[DATABASE] DEBUG MODE ENABLED", file=sys.stderr)
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///app.db")
+
+def _is_path_writable(path: Path) -> bool:
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+        test_file = path / ".write_test"
+        with open(test_file, "w", encoding="utf-8") as f:
+            f.write("ok")
+        test_file.unlink()
+        return True
+    except Exception:
+        return False
+
+
+def _get_default_database_url() -> str:
+    env_url = os.getenv("DATABASE_URL", "").strip()
+    if env_url:
+        return env_url
+
+    cwd = Path.cwd()
+    if _is_path_writable(cwd):
+        return "sqlite:///app.db"
+
+    temp_dir = Path(tempfile.gettempdir())
+    if _is_path_writable(temp_dir):
+        temp_db = temp_dir / "app.db"
+        return f"sqlite:///{temp_db.as_posix()}"
+
+    return "sqlite:///app.db"
+
+
+DATABASE_URL = _get_default_database_url()
 
 if DEBUG_MODE:
     print(f"[DATABASE] Using: {DATABASE_URL}", file=sys.stderr)

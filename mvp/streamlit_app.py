@@ -43,7 +43,7 @@ from mvp.auth import (
     set_tenant_plan,
     update_tenant_profile,
 )
-from mvp.database import init_db
+from mvp.database import init_db, DATABASE_URL
 from mvp.utils import (
     build_unplanned_report,
     compute_category_deviation,
@@ -432,7 +432,7 @@ def reset_sqlite_database_if_requested() -> None:
     if os.getenv("RESET_DATABASE", "").strip().lower() not in {"1", "true", "yes"}:
         return
 
-    database_url = os.getenv("DATABASE_URL", "sqlite:///app.db")
+    database_url = DATABASE_URL
     if database_url.startswith("sqlite:///"):
         db_path = Path(database_url.replace("sqlite:///", ""))
         if db_path.exists():
