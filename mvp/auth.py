@@ -82,14 +82,24 @@ def create_user(email: str, password: str):
     if existing:
         return None
 
-    tenant = _get_or_create_tenant_for_signup(email)
+    try:
+        tenant = _get_or_create_tenant_for_signup(email)
+    except Exception as e:
+        print(f"ERROR creating tenant during signup: {e}")
+        raise RuntimeError(f"Erro ao criar empresa: {str(e)}")
+
     hashed = hash_password(password)
     user = User(email=normalize_email(email), password_hash=hashed, tenant_id=tenant.id, role="admin")
 
-    with SessionLocal() as db:
-        db.add(user)
-        db.commit()
-        db.refresh(user)
+    try:
+        with SessionLocal() as db:
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+    except Exception as e:
+        print(f"ERROR creating user: {e}")
+        raise RuntimeError(f"Erro ao criar usuário: {str(e)}")
+
     return user
 
 
