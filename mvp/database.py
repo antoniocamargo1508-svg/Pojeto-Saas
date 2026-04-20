@@ -117,8 +117,15 @@ def init_db():
     import mvp.models
 
     try:
+        print("[DATABASE] Starting table creation...", file=sys.stderr)
         Base.metadata.create_all(bind=engine)
+        print("[DATABASE] Tables created successfully", file=sys.stderr)
+        
+        print("[DATABASE] Running _ensure_schema...", file=sys.stderr)
         _ensure_schema()
+        print("[DATABASE] Schema initialization complete", file=sys.stderr)
     except Exception as e:
-        print(f"ERROR during database initialization: {e}")
+        print(f"[DATABASE] ERROR during initialization: {e}", file=sys.stderr)
+        import traceback
+        traceback.print_exc(file=sys.stderr)
         raise

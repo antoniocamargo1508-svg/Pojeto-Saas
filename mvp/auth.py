@@ -3,11 +3,21 @@ import hashlib
 import hmac
 import os
 import secrets
+import sys
+import traceback
 from datetime import datetime, timedelta
 from sqlalchemy import false
 from sqlalchemy import select
 from mvp.database import SessionLocal
 from mvp.models import PasswordResetToken, Tenant, TenantInvite, User
+
+
+def _debug_log(msg: str, error: Exception = None):
+    """Print debug messages to help with troubleshooting."""
+    print(f"[AUTH DEBUG] {msg}", file=sys.stderr)
+    if error:
+        print(f"[AUTH DEBUG] {type(error).__name__}: {str(error)}", file=sys.stderr)
+        traceback.print_exc(file=sys.stderr)
 
 
 def _guess_tenant_name_from_email(email: str) -> str:
@@ -24,12 +34,20 @@ def _guess_tenant_name_from_email(email: str) -> str:
 def _get_or_create_tenant_for_signup(email: str) -> Tenant:
     tenant_name = _guess_tenant_name_from_email(email)
     trial_ends_at = datetime.utcnow() + timedelta(days=7)
-    with SessionLocal() as db:
-        tenant = Tenant(name=tenant_name, plan="starter", trial_ends_at=trial_ends_at)
-        db.add(tenant)
-        db.commit()
-        db.refresh(tenant)
-        return tenant
+    _debug_log(f"Creating tenant: name={tenant_name}")
+    
+    try:
+        with SessionLocal() as db:
+            tenant = Tenant(name=tenant_name, plan="starter", trial_ends_at=trial_ends_at)
+            db.add(tenant)
+            _debug_log(f"Tenant object added to session, committing...")
+            db.commit()
+            db.refresh(tenant)
+            _debug_log(f"Tenant committed: id={tenant.id}")
+            return tenant
+    except Exception as e:
+        _debug_log(f"Error in _get_or_create_tenant_for_signup", e)
+        raise
 
 
 def normalize_email(email: str) -> str:
@@ -78,27 +96,37 @@ def get_user_by_email(email: str):
 
 
 def create_user(email: str, password: str):
-    existing = get_user_by_email(email)
-    if existing:
-        return None
-
+    email = normalize_email(email)
+    _debug_log(f"create_user called for: {email}")
+    
     try:
+        existing = get_user_by_email(email)
+        if existing:
+            _debug_log(f"User already exists: {email}")
+            return None
+
+        _debug_log(f"User does not exist, attempting to create tenant...")
         tenant = _get_or_create_tenant_for_signup(email)
+        _debug_log(f"Tenant created successfully: id={tenant.id}")
     except Exception as e:
-        print(f"ERROR creating tenant during signup: {e}")
-        raise RuntimeError(f"Erro ao criar empresa: {str(e)}")
-
-    hashed = hash_password(password)
-    user = User(email=normalize_email(email), password_hash=hashed, tenant_id=tenant.id, role="admin")
+        error_msg = f"Falha ao criar empresa (tenant)"
+        _debug_log(error_msg, e)
+        raise RuntimeError(f"{error_msg}: {str(e)[:200]}")
 
     try:
+        hashed = hash_password(password)
+        user = User(email=email, password_hash=hashed, tenant_id=tenant.id, role="admin")
+        _debug_log(f"User object created, saving to database...")
+
         with SessionLocal() as db:
             db.add(user)
             db.commit()
             db.refresh(user)
+            _debug_log(f"User saved successfully: id={user.id}")
     except Exception as e:
-        print(f"ERROR creating user: {e}")
-        raise RuntimeError(f"Erro ao criar usuário: {str(e)}")
+        error_msg = f"Falha ao criar usuário"
+        _debug_log(error_msg, e)
+        raise RuntimeError(f"{error_msg}: {str(e)[:200]}")
 
     return user
 
